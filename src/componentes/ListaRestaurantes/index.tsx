@@ -4,6 +4,7 @@ import style from "./ListaRestaurantes.module.scss";
 import Restaurante from "./Restaurante";
 import axios from "axios";
 import { IPaginacao } from "../../interfaces/IPaginacao";
+import { TextField } from "@mui/material";
 
 const ListaRestaurantes = () => {
   
@@ -30,11 +31,26 @@ const ListaRestaurantes = () => {
       });
   };
 
+  const filtrarRestaurante = (evento: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    axios.get<IPaginacao<IRestaurante>>('http://localhost:8000/api/v1/restaurantes/', {
+      params: {
+        search: evento.target.value
+      }
+    })
+      .then( res => {
+        // const listaFiltrada = restaurantes.filter(restaurante => restaurante.id === res.data.results)
+        setRestaurantes(res.data.results)
+      })
+  }
+
   return (
     <section className={style.ListaRestaurantes}>
       <h1>
         Os restaurantes mais <em>bacanas</em>!
       </h1>
+      <form>
+      <TextField id="outlined-basic" label="Procure seu restaurante aqui" variant="outlined" color="primary" onChange={filtrarRestaurante} />
+      </form>
       {restaurantes?.map((item) => (
         <Restaurante restaurante={item} key={item.id} />
       ))}
