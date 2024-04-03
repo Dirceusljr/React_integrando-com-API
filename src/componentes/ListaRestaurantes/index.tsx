@@ -4,7 +4,7 @@ import style from "./ListaRestaurantes.module.scss";
 import Restaurante from "./Restaurante";
 import axios from "axios";
 import { IPaginacao } from "../../interfaces/IPaginacao";
-import { TextField } from "@mui/material";
+import { Box, Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@mui/material";
 
 const ListaRestaurantes = () => {
   
@@ -43,14 +43,39 @@ const ListaRestaurantes = () => {
       })
   }
 
+  const [ordem, setOrdem] = useState<string>('');
+
+  const aoSelecionar = (evento: SelectChangeEvent) => {
+    setOrdem(evento.target.value as string)
+  }
+
+  const ordenarLista = (evento: React.FormEvent<HTMLFormElement>) => {
+    evento.preventDefault()
+    axios.get<IPaginacao<IRestaurante>>(`http://localhost:8000/api/v1/restaurantes/?ordering=${ordem}`)
+      .then(res => {
+        setRestaurantes(res.data.results)
+      })
+
+  }
+
   return (
     <section className={style.ListaRestaurantes}>
       <h1>
         Os restaurantes mais <em>bacanas</em>!
       </h1>
-      <form>
+      <Box component="form" sx={{marginBottom: 2}}>
       <TextField id="outlined-basic" label="Procure seu restaurante aqui" variant="outlined" color="primary" onChange={filtrarRestaurante} />
-      </form>
+      </Box>
+      <Box component="form" onSubmit={ordenarLista} display="flex" columnGap={2} sx={{maxWidth: 250}}>
+        <FormControl fullWidth>
+          <InputLabel id="ordem">Ordenar por:</InputLabel>
+          <Select labelId="ordem" id="ordem" value={ordem} label="Ordenar por:" onChange={aoSelecionar}>
+            <MenuItem value={'nome'}>Nome</MenuItem>
+            <MenuItem value={'id'}>Id</MenuItem>
+          </Select>
+        </FormControl>
+        <Button type="submit">Buscar</Button>
+      </Box>
       {restaurantes?.map((item) => (
         <Restaurante restaurante={item} key={item.id} />
       ))}
