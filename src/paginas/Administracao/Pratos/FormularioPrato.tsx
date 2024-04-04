@@ -3,13 +3,29 @@ import { useEffect, useState } from "react";
 import IRestaurante from "../../../interfaces/IRestaurante";
 import http from "../../../http";
 import Itags from "../../../interfaces/ITags";
+import { useParams } from "react-router-dom";
+import IPrato from "../../../interfaces/IPrato";
 
 const FormularioPrato = () => {
   const [nomePrato, setNomePrato] = useState("");
   const [descricaoPrato, setDescricaoPrato] = useState("");
   const [tagPrato, setTagPrato] = useState("");
-  const [restaurantePrato, setRestaurantePrato] = useState("");
+  const [restaurantePrato, setRestaurantePrato] = useState(0);
   const [imagemPrato, setImagemPrato] = useState<File | null>(null);
+
+  const parametros = useParams();
+
+  useEffect(()=> {
+    if(parametros.id) {
+      http.get<IPrato>(`pratos/${parametros.id}/`)
+      .then((res) =>
+{       setNomePrato(res.data.nome);
+        setDescricaoPrato(res.data.descricao);
+        setTagPrato(res.data.tag);
+        setRestaurantePrato(res.data.restaurante);
+        }
+      )}
+  }, [parametros])
 
 
   const [listaTags, setListaTags] = useState<Itags[]>([])
@@ -38,25 +54,38 @@ const FormularioPrato = () => {
     formData.append('nome', nomePrato);
     formData.append('descricao', descricaoPrato);
     formData.append('tag', tagPrato);
-    formData.append('restaurante', restaurantePrato);
+    formData.append('restaurante', restaurantePrato.toString());
 
-    if(imagemPrato) {
+    if(!parametros.id && imagemPrato) {
         formData.append('imagem', imagemPrato);
     }
 
-    http.request({
-        url: 'pratos/',
-        method: 'POST',
+    const url = parametros.id ? `pratos/${parametros.id}/` : 'pratos/';
+    const method = parametros.id ? 'PUT' : 'POST';
+
+      http.request({
+        url,
+        method,
         headers: {
             "Content-Type": "multipart/form-data"
         },
         data: formData
     })
-    .then(() => alert('Prato cadastrado com sucesso!'))
+    .then(() => {
+      if (parametros.id) {
+        alert('Prato atualizado com sucesso!')
+      } else {
+        setNomePrato('')
+                    setDescricaoPrato('')
+                    setTagPrato('')
+                    setRestaurantePrato(0)
+                    setImagemPrato(null)
+                    alert('Prato cadastrado com sucesso!')
+      }
+    })
     .catch(erro => console.log(erro))
-    
+      }
 
-  };
 
   return (
     <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", flexGrow: 1 }}>
@@ -92,7 +121,7 @@ const FormularioPrato = () => {
         </FormControl>
         <FormControl margin="dense" fullWidth>
             <InputLabel id='select-restaurante'>Restaurante</InputLabel>
-            <Select labelId='select-restaurante' value={restaurantePrato} onChange={(evento) => setRestaurantePrato(evento.target.value)}>
+            <Select labelId='select-restaurante' value={restaurantePrato} onChange={(evento) => setRestaurantePrato(Number(evento.target.value))}>
                 {listaRestaurante.map((restaurante) => (
                     <MenuItem value={restaurante.id} key={restaurante.id}>{restaurante.nome}</MenuItem>
                 ))}
@@ -107,6 +136,5 @@ const FormularioPrato = () => {
       </Box>
     </Box>
   );
-};
-
+                }
 export default FormularioPrato;
